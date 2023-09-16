@@ -94,6 +94,8 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_UART_Transmit(&huart2, (uint8_t *)"Hello Word!\r\n", 14, 20);
+
   while (1)
   {
     /* USER CODE END WHILE */
