@@ -41,7 +41,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef huart2;
-DMA_HandleTypeDef hdma_usart2_rx;
+DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
 
@@ -59,24 +59,32 @@ static void MX_USART2_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 uint8_t Rx_data[8];
-/*int _write(int file, char *ptr, int len)
-{
-  HAL_UART_Transmit(&huart2,(uint8_t*)ptr,len,10);
-  return len;
+uint8_t Tx_busy=0;
 
-}*/
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) //When the interruption the function is called
-{
-	HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5); // toggle the led
-	HAL_UART_Receive_IT(&huart2,Rx_data,4);// receive the data back to call the function again if necessary
-	}
 
 int _write(int file, char *ptr, int len)
 {
-	HAL_UART_Transmit(&huart2,(uint8_t*)ptr,len,10);
+	while(Tx_busy != 0){/* Wait*/}
+	HAL_UART_Transmit_DMA(&huart2,(uint8_t*)ptr,len);
+	Tx_busy=1;
+
 	return len;
 }
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart)
+{
+	HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5); // toggle the led
+}
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) //When the interruption the function is called
+{
+	printf("REceive complete: [%s]\r\n",Rx_data);
+	HAL_UART_Receive_IT(&huart2,Rx_data,4);// receive the data back to call the function again if necessary
+	}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) //When the interruption the function is called
+{
+	Tx_busy=0;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -111,22 +119,24 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  /* USER CODE END 2 */
 
 
   for (uint8_t idx = 0; idx <= 0x0F; idx ++) //print a count
-	 printf("IDX 0x%02X\r\n",idx);
-
-  //uint8_t my_str[] = "Sapo perro!\r\n";
-  //HAL_UART_Transmit(&huart2, my_str, sizeof(my_str)-1, 10);
+	     printf("IDX 0x%02X\r\n",idx);
 
   HAL_UART_Receive_IT(&huart2,Rx_data,4); //We declare the interruption with the uart receive
 
+
+
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /* USER CODE END WHILE */
 
-
-
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -225,9 +235,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
-  /* DMA1_Channel6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
+  /* DMA1_Channel7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
 
 }
 
